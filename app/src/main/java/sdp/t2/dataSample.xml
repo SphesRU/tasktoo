@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<records>
+<record>
+		<name>Xena Bradford</name>
+		<postalZip>17716</postalZip>
+		<region>Bahia</region>
+		<country>Brazil</country>
+		<address>Ap #593-1566 Lectus Ave</address>
+		<list>61, 1, 41, 37, 13</list>
+	</record>
+	<record>
+		<name>Zenaida Hensley</name>
+		<postalZip>5224-6358</postalZip>
+		<region>São Paulo</region>
+		<country>Brazil</country>
+		<address>Ap #545-2456 Risus Av.</address>
+		<list>53, 71, 17, 2</list>
+	</record>
+	<record>
+		<name>Cameron Wiley</name>
+		<postalZip>7097</postalZip>
+		<region>Northern Cape</region>
+		<country>South Africa</country>
+		<address>Ap #768-2948 Enim Rd.</address>
+		<list>19, 43, 17, 97, 73, 79, 47</list>
+	</record>
+</records>
