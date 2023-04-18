@@ -1,60 +1,93 @@
 package sdp.t2;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class App {
-    public static void main(String[] args) {
-        try {
-            // Create a new DocumentBuilderFactory
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    
+    public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException {
+        // Get user input for fields to output
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter fields to output (comma-separated): ");
+        String[] fields = scanner.nextLine().split(",");
 
-            // Use the factory to create a new DocumentBuilder
-            DocumentBuilder builder = factory.newDocumentBuilder();
+        // Create a SAXParserFactory and configure it
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setNamespaceAware(true);
+        factory.setValidating(false);
 
-            // Parse the XML file
-            File xmlFile = new File("data.xml");
-            Document doc = builder.parse(xmlFile);
+        // Create a SAXParser and parse the XML file
+        SAXParser parser = factory.newSAXParser();
+        parser.parse(new File("data.xml"), new MySAXHandler(fields));
+    }
 
-            // Get the root element of the document
-            Element root = doc.getDocumentElement();
+    private static class MySAXHandler extends DefaultHandler {
+        private List<String> fields;
+        private boolean inRecord;
+        private StringBuilder currentValue;
+        private List<String> currentFields;
 
-            // Get a list of all child elements of the root element
-            NodeList nodeList = root.getChildNodes();
+        public MySAXHandler(String[] fields) {
+            this.fields = new ArrayList<>();
+            for (String field : fields) {
+                this.fields.add(field.trim());
+            }
+            this.inRecord = false;
+            this.currentValue = new StringBuilder();
+            this.currentFields = new ArrayList<>();
+        }
 
-            // Get user input for fields to output
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("Enter fields to output (comma-separated): ");
-            String[] fields = scanner.nextLine().split(",");
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+            if (qName.equalsIgnoreCase("record")) {
+                inRecord = true;
+                currentFields.clear();
+                currentValue.setLength(0);
+            }
+        }
 
-            // Loop through each child element and print out the selected fields in JSON format
-            System.out.println("[");
-            for (int i = 0; i < nodeList.getLength(); i++) {
-                if (nodeList.item(i).getNodeType() == Node.ELEMENT_NODE) {
-                    Element element = (Element) nodeList.item(i);
-                    boolean firstField = true;
+        @Override
+        public void characters(char[] ch, int start, int length) throws SAXException {
+            if (inRecord) {
+                currentValue.append(ch, start, length);
+            }
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            if (inRecord) {
+                if (qName.equalsIgnoreCase("record")) {
+                    inRecord = false;
+                    // Print out the selected fields in JSON format
+                    StringBuilder output = new StringBuilder("{");
                     for (String field : fields) {
-                        if (element.getTagName().equals(field.trim())) {
-                            if (!firstField) {
-                                System.out.print(", ");
-                            } else {
-                                firstField = false;
-                            }
-                            System.out.print("\"" + element.getTagName() + "\": \"" + element.getTextContent() + "\"");
+                        if (currentFields.contains(field)) {
+                            String value = currentValue.toString().trim();
+                            value = value.replaceAll("\\n", "").replaceAll("\\r", "").replaceAll("\\s+", " ");
+                            output.append("\"").append(field).append("\":\"").append(value).append("\",");
                         }
                     }
-                    System.out.println();
+                    output.setLength(output.length() - 1);
+                    output.append("}");
+                    System.out.println(output.toString());
+                } else {
+                    String fieldName = qName.trim();
+                    if (fields.contains(fieldName) && !currentFields.contains(fieldName)) {
+                        currentFields.add(fieldName);
+                    }
                 }
             }
-            System.out.println("]");
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 }
